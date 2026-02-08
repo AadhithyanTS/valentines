@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Will You Be My Valentine?</title>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow: hidden;
+      transition: opacity 0.8s ease;
+    }
+
+    body.fade-out {
+      opacity: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 420px;
+      position: relative;
+    }
+
+    h1 {
+      color: #ff4d6d;
+      font-size: 2.2em;
+    }
+
+    p {
+      font-size: 1.1em;
+      margin-bottom: 25px;
+    }
+
+    button {
+      padding: 12px 28px;
+      font-size: 1em;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      margin: 10px;
+    }
+
+    #yesBtn {
+      background-color: #ff4d6d;
+      color: white;
+    }
+
+    #noBtn {
+      background-color: #ddd;
+      position: absolute;
+      transition: transform 0.15s ease-out;
+    }
+
+    #tease {
+      font-size: 0.9em;
+      color: #ff4d6d;
+      height: 18px;
+      margin-top: 10px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    #musicBtn {
+      margin-top: 15px;
+      font-size: 0.85em;
+      background: #ffe3e8;
+    }
+
+    .shake {
+      animation: shake 0.25s;
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-5px, 5px); }
+      50% { transform: translate(5px, -5px); }
+      75% { transform: translate(-5px, -5px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="confetti"></canvas>
+
+  <div class="card">
+    <h1>💖 Will you be my Valentine? 💖</h1>
+    <p>You make my world brighter every single day.</p>
+
+    <button id="yesBtn" onclick="sayYes()">Yes 💕</button>
+    <button id="noBtn">No 🙃</button>
+
+    <div id="tease">Nice try 😌</div>
+    <button id="musicBtn" onclick="toggleMusic()">🎵 Play music</button>
+  </div>
+
+  <!-- Background music -->
+  <audio id="bgMusic" loop>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    /* ---------------- NO BUTTON DODGE ---------------- */
+    const noBtn = document.getElementById("noBtn");
+    const tease = document.getElementById("tease");
+
+    let btnX = 0, btnY = 0;
+
+    function dodge(x, y) {
+      const rect = noBtn.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      const dx = x - cx;
+      const dy = y - cy;
+      const distance = Math.sqrt(dx*dx + dy*dy);
+      const danger = 130;
+
+      if (distance < danger) {
+        tease.style.opacity = 1;
+
+        btnX -= dx * 0.6;
+        btnY -= dy * 0.6;
+
+        const maxX = window.innerWidth / 2 - rect.width;
+        const maxY = window.innerHeight / 2 - rect.height;
+
+        btnX = Math.max(-maxX, Math.min(maxX, btnX));
+        btnY = Math.max(-maxY, Math.min(maxY, btnY));
+
+        if (
+          btnX === -maxX || btnX === maxX ||
+          btnY === -maxY || btnY === maxY
+        ) {
+          noBtn.classList.add("shake");
+          setTimeout(() => noBtn.classList.remove("shake"), 250);
+        }
+
+        noBtn.style.transform = `translate(${btnX}px, ${btnY}px)`;
+      } else {
+        tease.style.opacity = 0;
+      }
+    }
+
+    document.addEventListener("mousemove", e => dodge(e.clientX, e.clientY));
+    document.addEventListener("touchstart", e => {
+      const t = e.touches[0];
+      dodge(t.clientX, t.clientY);
+    });
+
+    /* ---------------- MUSIC ---------------- */
+    const music = document.getElementById("bgMusic");
+    let playing = false;
+
+    function toggleMusic() {
+      if (!playing) {
+        music.play();
+        playing = true;
+        document.getElementById("musicBtn").textContent = "⏸ Pause music";
+      } else {
+        music.pause();
+        playing = false;
+        document.getElementById("musicBtn").textContent = "🎵 Play music";
+      }
+    }
+
+    /* ---------------- CONFETTI ---------------- */
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = [];
+
+    function launchConfetti() {
+      for (let i = 0; i < 150; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          r: Math.random() * 6 + 4,
+          d: Math.random() * 30,
+          color: `hsl(${Math.random()*360},100%,70%)`
+        });
+      }
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        ctx.beginPath();
+        ctx.fillStyle = p.color;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        p.y += Math.cos(p.d) + 3;
+      });
+      requestAnimationFrame(animateConfetti);
+    }
+
+    /* ---------------- YES TRANSITION ---------------- */
+    function sayYes() {
+      launchConfetti();
+      document.body.classList.add("fade-out");
+
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <div style="
+            height:100vh;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            background:linear-gradient(135deg, #ff9a9e, #fad0c4);
+            font-family: Arial;
+            text-align:center;">
+            <h1 style="color:#ff4d6d;">YAYYY!! 💘💘💘</h1>
+            <p style="font-size:1.2em;">I can’t wait to make this Valentine’s Day special with you ❤️</p>
+          </div>
+        `;
+        document.body.classList.remove("fade-out");
+      }, 900);
+    }
+  </script>
+
+</body>
+</html>
